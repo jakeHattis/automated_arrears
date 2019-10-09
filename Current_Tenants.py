@@ -29,7 +29,7 @@ for i in range(len(users)):
 
 current_tenants = pd.read_csv("currentTenants.csv")
 daily_arrears = pd.read_csv("Arrears.csv")
-arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Days", 'Property Code', 'Property']]
+arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Days", 'Property Code', 'Property', 'Tenancy Agent']]
 arrears_formatted['email'] = ''
 arrears_formatted['Outstanding'] = arrears_formatted['Outstanding'].astype(str)
 arrears_formatted['Days'] = arrears_formatted['Days'].astype(str)
@@ -45,6 +45,7 @@ for i in range(len(arrears_formatted["Tenancy Code"])):
             pass
         else:
             arrears_formatted.loc[i, 'email'] = email
+#Exercise running through tenants that were updated and resetting those that are not present in current arrears table, while changing those that are still present.
 payload = []
 for j in range(len(updated_users['external_id'])):
     name_z = updated_users['name'][j]
@@ -90,7 +91,7 @@ for j in range(len(updated_users['external_id'])):
             }
         }
         payload.append(addition)
-
+#running through users again to add in new tenants that are in arrears -- packaging them in the payload array.
 for i in range(len(arrears_formatted['Tenancy Code'])):
     name = arrears_formatted['Tenant'][i]
     email = arrears_formatted['email'][i]
@@ -121,6 +122,7 @@ for i in range(len(arrears_formatted['Tenancy Code'])):
                 }
             }
         payload.append(addition)
+#Sending the updated users to Zendesk
 usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
 post_endpoint = 'https://longview.zendesk.com/api/v2/users/create_or_update_many.json'
@@ -129,7 +131,7 @@ auth = {usr, passw}
 headers = {"Content-Type": 'application/json'}
 update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
 #input("Jolly Ho! The program was successful. Press Enter! Status Code: " + str(update_response.status_code))
-# Next Steps -- Create Tickets with the relevant fields, then update the tickets with the relevant fields
+# Automated tickets and comments for tenants that are 3-4 days in arrears
 query = "type:user days_in_arrears>2 days_in_arrears<5"
 threeFourUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
@@ -159,12 +161,14 @@ for i in range(len(threeFour['results'])):
         }
     }
     threeFourArrearsPayload.append(ticket_update)
+threeFourArrearsData = {'tickets': threeFourArrearsPayload}
+#Automated tickets created for tenants taht are seven days in arrears. 
 query = "type:user days_in_arrears:7"
 SevenUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
 sevenRequest = requests.get(SevenUrl, auth = (usr, passw)).json()
-SevenPayload = []
+sevenPayload = []
 for i in range(len(sevenRequest['results'])):
     request_id = sevenRequest['results'][i]['id']
     prop_address = sevenRequest['results'][i]['user_fields']['property_address']
@@ -187,7 +191,9 @@ for i in range(len(sevenRequest['results'])):
             'public': True,
         }
     }
-    SevenPayload.append(ticket_update)
+    sevenPayload.append(ticket_update)
+SevenArrearsData = {'tickets': sevenPayload}
+# Tickets that will be created for SS to call the tenant at 5 days in arrears
 query = "type:user days_in_arrears:5"
 fiveUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
@@ -216,5 +222,56 @@ for i in range(len(fiveRequest['results'])):
             'public': False,
         }
     }
-    SevenPayload.append(ticket_update)
-    #Last thing to add is the property manager email
+    fivePayload.append(ticket_update)
+fiveArrearsData = {'tickets': fivePayload}
+
+over_10 = arrears_formatted[arrears_formatted['Days'] >= 10]
+PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
+#PMs that will be included in the email
+PMs = ['Mal Younes', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays']
+#Creating the email that will be sent to the PMs
+for i in range(len(PMs)):
+    pm = PMs[i]
+    PMemailNotification = PMemailNotification + '<h2>' + pm + '</h2>'
+    pm_prop = arrears_formatted[over_10['Tenancy Agent'] == pm].reset_index()
+    if len(pm_prop['Property']) == 0:
+        PMemailNotification = PMemailNotification + '<p>' + none :) + '</p>'
+    for j in range(len(pm_prop['Property'])):
+        over10_prop =pm_prop['Property'][j]
+        if j == 0:
+            PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
+        else:
+            over10_propbefore = pm_prop['Property'][j-1]
+            if over10_propbefore == over10_prop:
+                continue
+            else:
+                PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
+        
+    PMemailNotification = PMemailNotification + '<p></p>'
+#Need to add PUT requests for each payloads
+ticket_update = {
+        'type': 'incident',
+        'subject': 'Over 10-days Arrears Notification',
+        'status': 'solved',
+        # Codes for PMs Order is Mal, Cath, Erin, Andrew, Meri
+        'email_cc_ids': [383510578571,384465913331,384717503591,386897750352, 385533670052],
+        'custom_fields': [
+            {'id': 360021904892, 'value': 'tx_only'},
+            {'id': 360021971611, 'value': 'team_arrears_notification'},
+            {'id': 360022146692, 'value': 'property_manager'},
+            {'id': 360022146732, 'value': 'outbound'}
+        ],
+        'comment': {
+            'type': 'Comment',
+            'html_body': PMemailNotification,
+            # Author Id is set to Shaun
+            'author_id': 383909195851,
+            'public': True,
+        }
+    }
+tenTicketData = {'tickets': ticket_update}
+#single_email_url = 'https://longview.zendesk.com/api/v2/tickets.json'
+#bulk_email_url = 'https://longview.zendesk.com/api/v2//api/v2/tickets/create_many.json'
+#three_four_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=threeFourArrearsData)
+#seven_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=SevenArrearsData)
+#ten_request = requests.post(url=single_email_url, auth=(usr,passw), headers=headers, json=tenTicketData)
