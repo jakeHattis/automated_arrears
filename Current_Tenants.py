@@ -200,7 +200,7 @@ for i in range(len(fiveRequest['results'])):
     prop_code = fiveRequest['results'][i]['user_fields']['property_code']
     ticket_update = {
         'type': 'task',
-        'subject': "5 day Arrears Call for property: " + str(prop_address)
+        'subject': "5 day Arrears Call for property: " + str(prop_address),
         'status': 'new',
         'requester_id': request_id,
         'custom_fields': [
