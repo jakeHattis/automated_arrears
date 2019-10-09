@@ -12,7 +12,6 @@ usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
 response = requests.get(url, auth = (usr, passw)).json()
 users = response["results"]
-len(users)
 
 updated_users = pd.DataFrame(columns = ['name', 'email', 'external_id'])
 updated_users['name'] = updated_users['name'].astype(str)
@@ -34,7 +33,7 @@ arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Day
 arrears_formatted['email'] = ''
 arrears_formatted['Outstanding'] = arrears_formatted['Outstanding'].astype(str)
 arrears_formatted['Days'] = arrears_formatted['Days'].astype(str)
-arrears_formatted.dtypes
+
 for i in range(len(arrears_formatted["Tenancy Code"])):
     ten_code = arrears_formatted["Tenancy Code"][i]
     days = arrears_formatted["Days"][i]
