@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 
 print("Hi there! I'm going to run through the program now.")
 date = datetime.now() - timedelta(days=7)
-time = date.strftime("%Y-%m-%d")
+ytime = date.strftime("%Y-%m-%d")
 
-query = "type:user days_in_arrears>0 updated>" + time
+query = "type:user days_in_arrears>0 updated>" + ytime
 url = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
@@ -57,10 +57,8 @@ for j in range(len(updated_users['external_id'])):
         'external_id': external_id_z,
         'user_fields': {
             'days_in_arrears': 0,
-            'amount_outstanding': 0,
-            'property_code': prop_code,
-            'property_address': prop_add
-        }
+            'amount_outstanding': 0
+            }
     }
     payload.append(addition)
 
