@@ -29,15 +29,20 @@ for i in range(len(users)):
 #Formatting Daily Arrears
 current_tenants = pd.read_csv("currentTenants.csv")
 daily_arrears = pd.read_csv("Arrears.csv")
-arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Days", 'Property Code', 'Property', 'Tenancy Agent']]
+arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Days", 'Property Code', 'Property', 'Tenancy Agent', 'Date']]
 arrears_formatted['email'] = ''
 arrears_formatted['Days'] = arrears_formatted['Days'].astype(int)
 arrears_formatted['Outstanding'] = arrears_formatted['Outstanding'].astype(str)
-
+arrears_formatted['Proper Arrears'] = ''
 for i in range(len(arrears_formatted["Tenancy Code"])):
     ten_code = arrears_formatted["Tenancy Code"][i]
     days = arrears_formatted["Days"][i]
     outstanding = arrears_formatted["Outstanding"][i]
+    aDate = arrears_formatted['Date'][i]
+    if len(aDate) < 10:
+        arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%m-%d-%y")).days
+    else:
+        arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%d-%m-%Y")).days
     for j in range(len(current_tenants["external_id"])):
         external_id = current_tenants["external_id"][j]
         email = current_tenants['email'][j]
@@ -71,14 +76,15 @@ headers = {"Content-Type": 'application/json'}
 zero_update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
 time.sleep(15)
 payload = []
-for i in range(len(arrears_formatted['Tenancy Code'])):
-    name = arrears_formatted['Tenant'][i]
-    email = arrears_formatted['email'][i]
-    external_id = arrears_formatted['Tenancy Code'][i]
-    outstanding = arrears_formatted['Outstanding'][i]
-    days = arrears_formatted['Days'][i]
-    prop_code = arrears_formatted['Property Code'][i]
-    prop_add = arrears_formatted['Property'][i]
+true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 500)]
+for i in range(len(true_arrears['Tenancy Code'])):
+    name = true_arrears['Tenant'][i]
+    email = true_arrears['email'][i]
+    external_id = true_arrears['Tenancy Code'][i]
+    outstanding = true_arrears['Outstanding'][i]
+    days = true_arrears['Proper Arrears'][i]
+    prop_code = true_arrears['Property Code'][i]
+    prop_add = true_arrears['Property'][i]
     addition = {
         'name': name,
         'email': email,
