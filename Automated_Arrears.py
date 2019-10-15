@@ -32,7 +32,6 @@ daily_arrears = pd.read_csv("Arrears.csv")
 arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Days", 'Property Code', 'Property', 'Tenancy Agent', 'Date']]
 arrears_formatted['email'] = ''
 arrears_formatted['Days'] = arrears_formatted['Days'].astype(int)
-arrears_formatted['Outstanding'] = arrears_formatted['Outstanding'].astype(str)
 arrears_formatted['Proper Arrears'] = ''
 for i in range(len(arrears_formatted["Tenancy Code"])):
     ten_code = arrears_formatted["Tenancy Code"][i]
@@ -76,7 +75,7 @@ headers = {"Content-Type": 'application/json'}
 zero_update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
 time.sleep(15)
 payload = []
-true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 500)]
+true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 500)].reset_index()
 for i in range(len(true_arrears['Tenancy Code'])):
     name = true_arrears['Tenant'][i]
     email = true_arrears['email'][i]
@@ -91,7 +90,7 @@ for i in range(len(true_arrears['Tenancy Code'])):
         'external_id': external_id,
         'user_fields': {
             'days_in_arrears': int(days),
-            'amount_outstanding': outstanding,
+            'amount_outstanding': int(outstanding),
             'property_code': prop_code,
             'property_address': prop_add
              }
@@ -251,3 +250,4 @@ if update_response.status_code == 200:
     seven_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=SevenArrearsData)
     five_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=fiveArrearsData)
     ten_request = requests.post(url=single_email_url, auth=(usr,passw), headers=headers, json=tenTicketData)
+    input("Program Successful, Press Enter")
