@@ -183,6 +183,7 @@ if update_response.status_code == 200:
             'type': 'task',
             'subject': "5 day Arrears Call for property: " + str(prop_address),
             'status': 'new',
+            'requester_id': request_id,
             'custom_fields': [
                 {'id': 360021904892, 'value': 'tx_only'},
                 {'id': 360021971591, 'value': prop_code},
