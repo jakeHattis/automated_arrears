@@ -87,14 +87,14 @@ if x > 100:
     for i in range(len(multiple_payloads)):
         payload = multiple_payloads[i]
         data = {'users': payload}
-        zero_update_responsei = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+        # zero_update_responsei = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
 else:
     data = {'users': payload}
     auth = {usr, passw}
     headers = {"Content-Type": 'application/json'}
-    zero_update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+    # zero_update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
 
-
+print(len(payload))
 time.sleep(15)
 #resetting payload for updated arrears
 
@@ -139,13 +139,13 @@ if x > 100:
     for i in range(len(multiple_payloads)):
         payload = multiple_payloads[i]
         data = {'users': payload}
-        update_responsei = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+        # update_responsei = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
 else:
     data = {'users': payload}
     auth = {usr, passw}
     headers = {"Content-Type": 'application/json'}
-    update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
-
+    # update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+print(len(payload))
 
 time.sleep(30)
 # Automated tickets and comments for tenants that are 3-4 days in arrears
@@ -249,7 +249,7 @@ if update_response.status_code == 200:
     over_10 = true_arrears[true_arrears['Days'] >= 10]
     PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
     #PMs that will be included in the email
-    PMs = ['Mal Younes', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Olivia Fraser-Jones', 'Jess hayes', 'Tess Hudaverdi']
+    PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Olivia Fraser-Jones', 'Jess hayes', 'Tess Hudaverdi']
     #Creating the email that will be sent to the PMs
     for i in range(len(PMs)):
         pm = PMs[i]
@@ -269,11 +269,11 @@ if update_response.status_code == 200:
                     PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
             
         PMemailNotification = PMemailNotification + '<p></p>'
-    ticket_update = {
+    ticket_update = [{
             'type': 'incident',
             'subject': 'Over 10-days Arrears Notification',
             'status': 'solved',
-            # Codes for PMs Order is Mal, Cath, Erin, Andrew, Meri, Lucy Black, Steph Wallace, Lisa Yang, Olivia Fraser Jones, Cass Williams, Tania Gunther, Jess Hayes, Tess Hudaverdi, Audrey Chong, Megan Taylor
+            # Codes for PMs Order is Jenna Hilton, Cath, Erin, Andrew, Meri, Lucy Black, Steph Wallace, Lisa Yang, Olivia Fraser Jones, Cass Williams, Tania Gunther, Jess Hayes, Tess Hudaverdi, Audrey Chong, Megan Taylor
             'email_cc_ids': [383510578571,384465913331,384717503591,386897750352, 385533670052, 388908486311, 387670113511, 386911509672, 386297556552, 384744785051, 384711255811, 384655325172, 384617943391, 384541089651, 384465913171],
             'custom_fields': [
                 {'id': 360021904892, 'value': 'tx_only'},
@@ -287,9 +287,26 @@ if update_response.status_code == 200:
                 # Author Id is set to Shaun
                 'author_id': 383909195851,
                 'public': True,
+            }},
+            {
+            'type': 'task',
+            'subject': "Please send SMS Arrears Notifications, Receipting is Completed",
+            'status': 'new',
+            'custom_fields': [
+                {'id': 360021904892, 'value': 'tx_only'},
+                {'id': 360021971611, 'value': 'arrears_sms_notification'},
+                {'id': 360022146692, 'value': 'tenant'},
+                {'id': 360022146732, 'value': 'outbound'}
+            ],
+            'comment': {
+                'type': 'Comment',
+                'html_body': 'Chloe finished the receipting. You can go ahead and send out the SMS arrears notifications. You are awesome!',
+                'public': False,
             }
-        }
+        }]
     tenTicketData = {'ticket': ticket_update}
+
+
     # single_email_url = 'https://longview.zendesk.com/api/v2/tickets.json'
     # bulk_email_url = 'https://longview.zendesk.com/api/v2/tickets/create_many.json'
     # three_four_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=threeFourArrearsData)
