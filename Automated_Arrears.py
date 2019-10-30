@@ -28,27 +28,32 @@ for i in range(len(users)):
 #Formatting Daily Arrears
 current_tenants = pd.read_csv("currentTenants.csv")
 daily_arrears = pd.read_csv("Arrears.csv")
-arrears_formatted = daily_arrears[["Tenant", "Tenancy Code", "Outstanding", "Days", 'Property Code', 'Property', 'Tenancy Agent', 'Date']]
+arrears_formatted = daily_arrears[["Tenant", "Outstanding", 'Property', 'Agent', 'Rent Paid To']]
 arrears_formatted['email'] = ''
-arrears_formatted['Days'] = arrears_formatted['Days'].astype(int)
+arrears_formatted['Tenancy Code'] = ''
 arrears_formatted['Proper Arrears'] = ''
-for i in range(len(arrears_formatted["Tenancy Code"])):
-    ten_code = arrears_formatted["Tenancy Code"][i]
-    days = arrears_formatted["Days"][i]
+for i in range(len(arrears_formatted['Tenant'])):
+    ten_name = arrears_formatted["Tenant"][i]
     outstanding = arrears_formatted["Outstanding"][i]
-    aDate = arrears_formatted['Date'][i]
-    if len(aDate) < 10:
+    aDate = arrears_formatted['Rent Paid To'][i]
+    prop = arrears_formatted['Property'][i]
+    if len(aDate) < 4:
+        arrears_formatted.loc[i, 'Proper Arrears'] = 0
+    elif len(aDate) < 10:
         arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%m-%d-%y")).days
     else:
         arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%d-%m-%Y")).days
     for j in range(len(current_tenants["external_id"])):
         external_id = current_tenants["external_id"][j]
         email = current_tenants['email'][j]
-        if ten_code != external_id:
+        add = current_tenants['Address'][j]
+        if prop != add:
             pass
         else:
             arrears_formatted.loc[i, 'email'] = email
-Exercise running through tenants that were updated and resetting those that are not present in current arrears table.
+            arrears_formatted.loc[i, 'Tenancy Code'] = external_id
+# Exercise running through tenants that were updated and resetting those that are not present in current arrears table.
+
 payload = []
 for j in range(len(updated_users['external_id'])):
     name_z = updated_users['name'][j]
@@ -100,14 +105,13 @@ time.sleep(15)
 #resetting payload for updated arrears
 
 payload = []
-true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 500)].reset_index()
+true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 100)].reset_index()
 for i in range(len(true_arrears['Tenancy Code'])):
     name = true_arrears['Tenant'][i]
     email = true_arrears['email'][i]
     external_id = true_arrears['Tenancy Code'][i]
     outstanding = true_arrears['Outstanding'][i]
     days = true_arrears['Proper Arrears'][i]
-    prop_code = true_arrears['Property Code'][i]
     prop_add = true_arrears['Property'][i]
     addition = {
         'name': name,
@@ -116,7 +120,6 @@ for i in range(len(true_arrears['Tenancy Code'])):
         'user_fields': {
             'days_in_arrears': int(days),
             'amount_outstanding': int(outstanding),
-            'property_code': prop_code,
             'property_address': prop_add
              }
         }
@@ -250,7 +253,7 @@ if update_response.status_code == 200:
         fivePayload.append(ticket_update)
     fiveArrearsData = {'tickets': fivePayload}
     #creating the over-10 days in arrears list to be sent to each of the pms.
-    over_10 = true_arrears[true_arrears['Days'] >= 10]
+    over_10 = true_arrears[true_arrears['Proper Arrears'] >= 10]
     PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
     #PMs that will be included in the email
     PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Olivia Fraser-Jones', 'Jess hayes', 'Tess Hudaverdi']
