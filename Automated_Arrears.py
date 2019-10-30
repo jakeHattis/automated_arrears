@@ -34,7 +34,8 @@ arrears_formatted['Tenancy Code'] = ''
 arrears_formatted['Proper Arrears'] = ''
 for i in range(len(arrears_formatted['Tenant'])):
     ten_name = arrears_formatted["Tenant"][i]
-    outstanding = arrears_formatted["Outstanding"][i]
+    outstanding = float(arrears_formatted["Outstanding"][i].split('$', 1)[1].replace(',', ''))
+    arrears_formatted.loc[i, 'Outstanding'] = outstanding
     aDate = arrears_formatted['Rent Paid To'][i]
     prop = arrears_formatted['Property'][i]
     if len(aDate) < 4:
@@ -105,7 +106,7 @@ time.sleep(15)
 #resetting payload for updated arrears
 
 payload = []
-true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 100)].reset_index()
+true_arrears = arrears_formatted[(arrears_formatted['Proper Arrears'] >= 3) & (arrears_formatted['Outstanding'] > 100.0)].reset_index()
 for i in range(len(true_arrears['Tenancy Code'])):
     name = true_arrears['Tenant'][i]
     email = true_arrears['email'][i]
@@ -261,7 +262,7 @@ if update_response.status_code == 200:
     for i in range(len(PMs)):
         pm = PMs[i]
         PMemailNotification = PMemailNotification + '<h4>' + pm + '</h4>'
-        pm_prop = over_10[over_10['Tenancy Agent'] == pm].reset_index()
+        pm_prop = over_10[over_10['Agent'] == pm].reset_index()
         if len(pm_prop['Property']) == 0:
             PMemailNotification = PMemailNotification + '<p>none :)</p>'
         for j in range(len(pm_prop['Property'])):
