@@ -34,8 +34,11 @@ arrears_formatted['Tenancy Code'] = ''
 arrears_formatted['Proper Arrears'] = ''
 for i in range(len(arrears_formatted['Tenant'])):
     ten_name = arrears_formatted["Tenant"][i]
-    outstanding = float(arrears_formatted["Outstanding"][i].split('$', 1)[1].replace(',', ''))
-    arrears_formatted.loc[i, 'Outstanding'] = outstanding
+    if len(outstanding) < 2:
+        arrears_formatted.loc[i, 'Outstanding'] = 0.0
+    else:
+        outstanding = float(arrears_formatted["Outstanding"][i].split('$', 1)[1].replace(',', ''))
+        arrears_formatted.loc[i, 'Outstanding'] = outstanding
     aDate = arrears_formatted['Rent Paid To'][i]
     prop = arrears_formatted['Property'][i]
     if len(aDate) < 4:
@@ -182,7 +185,7 @@ if update_response.status_code == 200:
             ],
             'comment': {
                 'type': 'Comment',
-                'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>Please ensure this is paid at your earliest possible convenience, to prevent any further legal action being instigated.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
+                'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
                 'public': True,
                 'author_id': 383909195851
             }
@@ -278,14 +281,14 @@ if update_response.status_code == 200:
             
         PMemailNotification = PMemailNotification + '<p></p>'
     ten_tickets = []
-    pm_ids = [383510578571,384465913331,384717503591,386897750352,385533670052,388908486311,387670113511,386911509672,386297556552,384744785051,384711255811,384655325172,384617943391,384541089651,384465913171]
+    pm_ids = [383510578571,384465913331,384717503591,386897750352,385533670052,388908486311,387670113511,386911509672,386297556552,384744785051,384711255811,384655325172,384617943391,384541089651,384465913171, 385129973411]
     for i in range(len(pm_ids)):
         pm_id = pm_ids[i]
         ticket_update = {
                 'type': 'incident',
                 'subject': 'Over 10-days Arrears Notification',
                 'status': 'solved',
-                # Codes for PMs Order is 1.Jenna Hilton, 2.Cath, 3.Erin, 4.Andrew, 5.Meri, 6.Lucy Black, 7.Steph Wallace, 8.Lisa Yang, 9.Olivia Fraser Jones, 10.Cass Williams, 11.Tania Gunther, 12.Jess Hayes, 13.Tess Hudaverdi, 14.Audrey Chong, 15.Megan Taylor
+                # Codes for PMs Order is 1.Jenna Hilton, 2.Cath, 3.Erin, 4.Andrew, 5.Meri, 6.Lucy Black, 7.Steph Wallace, 8.Lisa Yang, 9.Olivia Fraser Jones, 10.Cass Williams, 11.Tania Gunther, 12.Jess Hayes, 13.Tess Hudaverdi, 14.Audrey Chong, 15.Megan Taylor 16. Danielle Clark
                 'requester_id': pm_id,
                 'custom_fields': [
                     {'id': 360021904892, 'value': 'tx_only'},
