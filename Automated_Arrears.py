@@ -68,14 +68,17 @@ for i in range(len(arrears_formatted['Tenant'])):
         arrears_formatted.loc[i, 'Raised Invoice'] = 0
     raised = arrears_formatted['Raised Invoice'][i]
     full_amount = arrears_formatted["Full Amount"][i]
-    if raised <= 5 and raised > -3:
+    full_amount = float(full_amount.split('$', 1)[1].replace(',', ''))
+    arrears_formatted.loc[i, "Full Amount"] = full_amount
+    if raised <= 5 and raised > -3 and len(str(aDate)) > 0:
         M = datetime.now().month - fDate.month + 1
-        #add in measure if month is only 1 -- outstanding will make it 0. 
-        N_Amount = full_amount/M
-        outstanding = outstanding - N_Amount
-        if outstanding > 0:
-            arrears_formatted.loc[i, "Outstanding"] = outstanding
-
+        if M > 1:
+            N_Amount = full_amount/M
+            outstanding = outstanding - N_Amount
+            if outstanding > 0:
+                arrears_formatted.loc[i, "Outstanding"] = outstanding
+        else:
+            pass
     for j in range(len(current_tenants["external_id"])):
         external_id = current_tenants["external_id"][j]
         email = current_tenants['email'][j]
@@ -289,7 +292,7 @@ if update_response.status_code == 200:
     over_10 = true_arrears[true_arrears['Proper Arrears'] >= 10]
     PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
     #PMs that will be included in the email
-    PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Olivia Fraser-Jones', 'Jess hayes', 'Tess Hudaverdi']
+    PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Jess hayes', 'Alisha Hinde', 'Danielle Clark']
     #Creating the email that will be sent to the PMs
     for i in range(len(PMs)):
         pm = PMs[i]
