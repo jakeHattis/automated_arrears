@@ -28,25 +28,54 @@ for i in range(len(users)):
 #Formatting Daily Arrears
 current_tenants = pd.read_csv("currentTenants.csv")
 daily_arrears = pd.read_csv("Arrears.csv")
-arrears_formatted = daily_arrears[["Tenant", "Outstanding", 'Property', 'Agent', 'Rent Paid To']]
+arrears_formatted = daily_arrears[["Tenant", "Outstanding", 'Full Amount', 'From', 'Property', 'Agent', 'Rent Paid To']]
 arrears_formatted['email'] = ''
 arrears_formatted['Tenancy Code'] = ''
 arrears_formatted['Proper Arrears'] = ''
+arrears_formatted['Raised Invoice'] = 0
 for i in range(len(arrears_formatted['Tenant'])):
     ten_name = arrears_formatted["Tenant"][i]
+    outstanding = arrears_formatted['Outstanding'][i]
     if len(outstanding) < 2:
-        arrears_formatted.loc[i, 'Outstanding'] = 0.0
+        arrears_formatted.loc[i, "Outstanding"] = 0
     else:
-        outstanding = float(arrears_formatted["Outstanding"][i].split('$', 1)[1].replace(',', ''))
+        outstanding = float(outstanding.split('$', 1)[1].replace(',', ''))
         arrears_formatted.loc[i, 'Outstanding'] = outstanding
     aDate = arrears_formatted['Rent Paid To'][i]
+    fDate = arrears_formatted['From'][i]
     prop = arrears_formatted['Property'][i]
     if len(aDate) < 4:
         arrears_formatted.loc[i, 'Proper Arrears'] = 0
+        arrears_formatted.loc[i, "Rent Paid To"] = ''
+        aDate = ''
     elif len(aDate) < 10:
         arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%m-%d-%y")).days
+        arrears_formatted.loc[i, 'Rent Paid To'] = datetime.strptime(aDate, "%m-%d-%y")
+        aDate = datetime.strptime(aDate, "%m-%d-%y")
     else:
         arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%d-%m-%Y")).days
+        arrears_formatted.loc[i, 'Rent Paid To'] = datetime.strptime(aDate, "%d-%m-%Y")
+        aDate = datetime.strptime(aDate, "%d-%m-%Y")
+    if len(fDate) < 10 and len(str(aDate)) > 8:
+        arrears_formatted.loc[i, 'Raised Invoice'] = (datetime.strptime(fDate, "%m-%d-%y") - datetime.now()).days
+        arrears_formatted.loc[i, 'From'] = datetime.strptime(fDate, "%d-%m-%y")
+        fDate = datetime.strptime(fDate, "%d-%m-%y")
+    elif len(fDate) >= 10 and len(str(aDate)) > 8:
+        arrears_formatted.loc[i, 'Raised Invoice'] = (datetime.strptime(fDate, "%d-%m-%Y") - datetime.now()).days
+        arrears_formatted.loc[i, 'From'] = datetime.strptime(fDate, "%d-%m-%Y")
+        fDate = datetime.strptime(fDate, "%d-%m-%Y")
+    else:
+        arrears_formatted.loc[i, 'Raised Invoice'] = 0
+    raised = arrears_formatted['Raised Invoice'][i]
+    full_amount = arrears_formatted["Full Amount"][i]
+    if raised <= 5 and raised > -3:
+        M = datetime.now().month - fDate.month + 1
+        #add in measure if month is only 1 -- outstanding will make it 0. 
+        N_Amount = full_amount/M
+        outstanding = outstanding - N_Amount
+        if outstanding > 0:
+            arrears_formatted.loc[i, "Outstanding"] = outstanding
+
     for j in range(len(current_tenants["external_id"])):
         external_id = current_tenants["external_id"][j]
         email = current_tenants['email'][j]
