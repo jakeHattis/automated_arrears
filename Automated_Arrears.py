@@ -39,7 +39,7 @@ for i in range(len(arrears_formatted['Tenant'])):
     if len(outstanding) < 2:
         arrears_formatted.loc[i, "Outstanding"] = 0
     else:
-        outstanding = float(outstanding.split('$', 1)[1].replace(',', ''))
+        outstanding = float(outstanding.split('$', 1)[1].replace(',', '').replace(")",""))
         arrears_formatted.loc[i, 'Outstanding'] = outstanding
     aDate = arrears_formatted['Rent Paid To'][i]
     fDate = arrears_formatted['From'][i]
@@ -48,19 +48,11 @@ for i in range(len(arrears_formatted['Tenant'])):
         arrears_formatted.loc[i, 'Proper Arrears'] = 0
         arrears_formatted.loc[i, "Rent Paid To"] = ''
         aDate = ''
-    elif len(aDate) < 10:
-        arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%m-%d-%y")).days
-        arrears_formatted.loc[i, 'Rent Paid To'] = datetime.strptime(aDate, "%m-%d-%y")
-        aDate = datetime.strptime(aDate, "%m-%d-%y")
     else:
         arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%d-%m-%Y")).days
         arrears_formatted.loc[i, 'Rent Paid To'] = datetime.strptime(aDate, "%d-%m-%Y")
         aDate = datetime.strptime(aDate, "%d-%m-%Y")
-    if len(fDate) < 10 and len(str(aDate)) > 8:
-        arrears_formatted.loc[i, 'Raised Invoice'] = (datetime.strptime(fDate, "%m-%d-%y") - datetime.now()).days
-        arrears_formatted.loc[i, 'From'] = datetime.strptime(fDate, "%d-%m-%y")
-        fDate = datetime.strptime(fDate, "%d-%m-%y")
-    elif len(fDate) >= 10 and len(str(aDate)) > 8:
+    if len(fDate) >= 9 and len(str(aDate)) > 8:
         arrears_formatted.loc[i, 'Raised Invoice'] = (datetime.strptime(fDate, "%d-%m-%Y") - datetime.now()).days
         arrears_formatted.loc[i, 'From'] = datetime.strptime(fDate, "%d-%m-%Y")
         fDate = datetime.strptime(fDate, "%d-%m-%Y")
@@ -68,7 +60,7 @@ for i in range(len(arrears_formatted['Tenant'])):
         arrears_formatted.loc[i, 'Raised Invoice'] = 0
     raised = arrears_formatted['Raised Invoice'][i]
     full_amount = arrears_formatted["Full Amount"][i]
-    full_amount = float(full_amount.split('$', 1)[1].replace(',', ''))
+    full_amount = float(full_amount.split('$', 1)[1].replace(',', '').replace(')',''))
     arrears_formatted.loc[i, "Full Amount"] = full_amount
     if raised <= 5 and raised > -3 and len(str(aDate)) > 0:
         M = datetime.now().month - fDate.month + 1
