@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 print("Hi there! I'm going to run through the program now.")
 date = datetime.now() - timedelta(days=7)
 ytime = date.strftime("%Y-%m-%d")
-
+now = datetime.now().strftime("%Y-%m-%d")
 query = "type:user days_in_arrears>0 updated>" + ytime
 url = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
@@ -49,13 +49,13 @@ for i in range(len(arrears_formatted['Tenant'])):
         arrears_formatted.loc[i, "Rent Paid To"] = ''
         aDate = ''
     else:
-        arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%d-%m-%Y")).days
-        arrears_formatted.loc[i, 'Rent Paid To'] = datetime.strptime(aDate, "%d-%m-%Y")
-        aDate = datetime.strptime(aDate, "%d-%m-%Y")
+        arrears_formatted.loc[i, 'Proper Arrears'] = (datetime.now() - datetime.strptime(aDate, "%d/%m/%Y")).days
+        arrears_formatted.loc[i, 'Rent Paid To'] = datetime.strptime(aDate, "%d/%m/%Y")
+        aDate = datetime.strptime(aDate, "%d/%m/%Y")
     if len(fDate) >= 9 and len(str(aDate)) > 8:
-        arrears_formatted.loc[i, 'Raised Invoice'] = (datetime.strptime(fDate, "%d-%m-%Y") - datetime.now()).days
-        arrears_formatted.loc[i, 'From'] = datetime.strptime(fDate, "%d-%m-%Y")
-        fDate = datetime.strptime(fDate, "%d-%m-%Y")
+        arrears_formatted.loc[i, 'Raised Invoice'] = (datetime.strptime(fDate, "%d/%m/%Y") - datetime.now()).days
+        arrears_formatted.loc[i, 'From'] = datetime.strptime(fDate, "%d/%m/%Y")
+        fDate = datetime.strptime(fDate, "%d/%m/%Y")
     else:
         arrears_formatted.loc[i, 'Raised Invoice'] = 0
     raised = arrears_formatted['Raised Invoice'][i]
@@ -185,7 +185,7 @@ time.sleep(30)
 
 #Automated tickets and comments for tenants that are 3-4 days in arrears
 if update_response.status_code == 200:
-    query = "type:user days_in_arrears>2 days_in_arrears<5"
+    query = "type:user days_in_arrears>2 days_in_arrears<5 Updated>" + now
     threeFourUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
     usr = 'jake.hattis@longview.com.au'
     passw = 'PotatoBondi3160!'
@@ -211,14 +211,13 @@ if update_response.status_code == 200:
                 'type': 'Comment',
                 'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
                 'public': True,
-                'author_id': 383909195851
             }
         }
         threeFourArrearsPayload.append(ticket_update)
     threeFourArrearsData = {'tickets': threeFourArrearsPayload}
 
     #Automated tickets created for tenants taht are seven days in arrears. 
-    query = "type:user days_in_arrears:7"
+    query = "type:user days_in_arrears:7 Updated>" + now
     SevenUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
     usr = 'jake.hattis@longview.com.au'
     passw = 'PotatoBondi3160!'
@@ -244,13 +243,12 @@ if update_response.status_code == 200:
                 'type': 'Comment',
                 'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This email is to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>If payment is not sent before 15 days has elapsed, a 14-day Notice To Vacate will be issued.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Kind regards,</p>',
                 'public': True,
-                'author_id': 383909195851
             }
         }
         sevenPayload.append(ticket_update)
     SevenArrearsData = {'tickets': sevenPayload}
     # Tickets that will be created for SS to call the tenant at 5 days in arrears
-    query = "type:user days_in_arrears:5"
+    query = "type:user days_in_arrears:5 Updated>" + now
     fiveUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
     usr = 'jake.hattis@longview.com.au'
     passw = 'PotatoBondi3160!'
@@ -284,7 +282,7 @@ if update_response.status_code == 200:
     over_10 = true_arrears[true_arrears['Proper Arrears'] >= 10]
     PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
     #PMs that will be included in the email
-    PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Jess hayes', 'Alisha Hinde', 'Danielle Clark']
+    PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Jess hayes', 'Alisha Hinde', 'Danielle Clark', 'Olivia Scott']
     #Creating the email that will be sent to the PMs
     for i in range(len(PMs)):
         pm = PMs[i]
@@ -323,8 +321,6 @@ if update_response.status_code == 200:
                 'comment': {
                     'type': 'Comment',
                     'html_body': PMemailNotification,
-                    # Author Id is set to Shaun
-                    'author_id': 383909195851,
                     'public': True,
                 }
             }
