@@ -81,7 +81,6 @@ for i in range(len(arrears_formatted['Tenant'])):
             arrears_formatted.loc[i, 'email'] = email
             arrears_formatted.loc[i, 'Tenancy Code'] = external_id
 # Exercise running through tenants that were updated and resetting those that are not present in current arrears table.
-
 payload = []
 for j in range(len(updated_users['external_id'])):
     name_z = updated_users['name'][j]
@@ -117,18 +116,21 @@ if x > 100:
         for i in range(y):
             payloadi = payload[i*100:(i+1)*100]
             multiple_payloads.append(payloadi)
+    print("Zeroing out users")
     for i in range(len(multiple_payloads)):
         payload = multiple_payloads[i]
         data = {'users': payload}
         zero_update_responsei = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+        print("Number in payload: " + str(len(payload)))
         print(zero_update_responsei)
 else:
     data = {'users': payload}
     auth = {usr, passw}
     headers = {"Content-Type": 'application/json'}
+    print("Zeroing out users")
     zero_update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+    print("number in payload: " + str(len(payload)))
     print(zero_update_response)
-print(len(payload))
 time.sleep(15)
 #resetting payload for updated arrears
 
@@ -168,164 +170,177 @@ if x > 100:
         for i in range(y):
             payloadi = payload[i*100:(i+1)*100]
             multiple_payloads.append(payloadi)
+    print("Sending updated arrears to Zendesk")
+    pa = []
     for i in range(len(multiple_payloads)):
         payload = multiple_payloads[i]
         data = {'users': payload}
         update_responsei = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+        pa.append(update_responsei)
+        print("Number in payload: " + str(len(payload)))
         print(update_responsei)
 else:
+    pa = []
     data = {'users': payload}
     auth = {usr, passw}
     headers = {"Content-Type": 'application/json'}
     update_response = requests.post(url=post_endpoint, auth=(usr,passw), headers= headers, json=data)
+    pa.append(update_response)
+    print("Sending updated arrears to Zendesk")
+    print("Number in payload: " + str(len(payload)))
     print(update_response)
-print(len(payload))
 print("Users have been sent to Zendesk. We're just going to give it a sec before shooting out a bunch of emails :)")
 time.sleep(30)
 
 #Automated tickets and comments for tenants that are 3-4 days in arrears
-if update_response.status_code == 200:
-    query = "type:user days_in_arrears>2 days_in_arrears<5 Updated>" + now
-    threeFourUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
-    threeFour = requests.get(threeFourUrl, auth = (usr, passw)).json()
-    threeFourArrearsPayload = []
-    for i in range(len(threeFour['results'])):
-        request_id = threeFour['results'][i]['id']
-        prop_address = threeFour['results'][i]['user_fields']['property_address']
-        prop_code = threeFour['results'][i]['user_fields']['property_code']
-        ticket_update = {
-            'type': 'incident',
-            'subject': "**Arrears Notification** for property: " + str(prop_address),
-            'status': 'solved',
-            'requester_id': request_id,
-            'custom_fields': [
-                {'id': 360021904892, 'value': 'tx_only'},
-                {'id': 360021971591, 'value': prop_code},
-                {'id': 360021971611, 'value': 'arrears_-_3-4_days'},
-                {'id': 360022146692, 'value': 'tenant'},
-                {'id': 360022146732, 'value': 'outbound'}
-            ],
-            'comment': {
-                'type': 'Comment',
-                'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
-                'public': True,
-            }
+for i in range(len(pa)):
+    pb = pa[i]
+    if pb.status_code != 200:
+        print(pb.status_code + " Error was found. Exit out of program.")
+        input("Exit Program")
+    else:
+        continue
+query = "type:user days_in_arrears>2 days_in_arrears<5 Updated>" + now
+threeFourUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
+usr = 'jake.hattis@longview.com.au'
+passw = 'PotatoBondi3160!'
+threeFour = requests.get(threeFourUrl, auth = (usr, passw)).json()
+threeFourArrearsPayload = []
+for i in range(len(threeFour['results'])):
+    request_id = threeFour['results'][i]['id']
+    prop_address = threeFour['results'][i]['user_fields']['property_address']
+    prop_code = threeFour['results'][i]['user_fields']['property_code']
+    ticket_update = {
+        'type': 'incident',
+        'subject': "**Arrears Notification** for property: " + str(prop_address),
+        'status': 'solved',
+        'requester_id': request_id,
+        'custom_fields': [
+            {'id': 360021904892, 'value': 'tx_only'},
+            {'id': 360021971591, 'value': prop_code},
+            {'id': 360021971611, 'value': 'arrears_-_3-4_days'},
+            {'id': 360022146692, 'value': 'tenant'},
+            {'id': 360022146732, 'value': 'outbound'}
+        ],
+        'comment': {
+            'type': 'Comment',
+            'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
+            'public': True,
         }
-        threeFourArrearsPayload.append(ticket_update)
-    threeFourArrearsData = {'tickets': threeFourArrearsPayload}
+    }
+    threeFourArrearsPayload.append(ticket_update)
+threeFourArrearsData = {'tickets': threeFourArrearsPayload}
 
-    #Automated tickets created for tenants taht are seven days in arrears. 
-    query = "type:user days_in_arrears:7 Updated>" + now
-    SevenUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
-    sevenRequest = requests.get(SevenUrl, auth = (usr, passw)).json()
-    sevenPayload = []
-    for i in range(len(sevenRequest['results'])):
-        request_id = sevenRequest['results'][i]['id']
-        prop_address = sevenRequest['results'][i]['user_fields']['property_address']
-        prop_code = sevenRequest['results'][i]['user_fields']['property_code']
-        ticket_update = {
+#Automated tickets created for tenants taht are seven days in arrears. 
+query = "type:user days_in_arrears:7 Updated>" + now
+SevenUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
+usr = 'jake.hattis@longview.com.au'
+passw = 'PotatoBondi3160!'
+sevenRequest = requests.get(SevenUrl, auth = (usr, passw)).json()
+sevenPayload = []
+for i in range(len(sevenRequest['results'])):
+    request_id = sevenRequest['results'][i]['id']
+    prop_address = sevenRequest['results'][i]['user_fields']['property_address']
+    prop_code = sevenRequest['results'][i]['user_fields']['property_code']
+    ticket_update = {
+        'type': 'incident',
+        'subject': "**7 Days Arrears Notification** for property: " + str(prop_address),
+        'status': 'solved',
+        'requester_id': request_id,
+        'custom_fields': [
+            {'id': 360021904892, 'value': 'tx_only'},
+            {'id': 360021971591, 'value': prop_code},
+            {'id': 360021971611, 'value': 'arrears_-_7_days'},
+            {'id': 360022146692, 'value': 'tenant'},
+            {'id': 360022146732, 'value': 'outbound'}
+        ],
+        'comment': {
+            'type': 'Comment',
+            'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This email is to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>If payment is not sent before 15 days has elapsed, a 14-day Notice To Vacate will be issued.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Kind regards,</p>',
+            'public': True,
+        }
+    }
+    sevenPayload.append(ticket_update)
+SevenArrearsData = {'tickets': sevenPayload}
+# Tickets that will be created for SS to call the tenant at 5 days in arrears
+query = "type:user days_in_arrears:5 Updated>" + now
+fiveUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
+usr = 'jake.hattis@longview.com.au'
+passw = 'PotatoBondi3160!'
+fiveRequest = requests.get(fiveUrl, auth = (usr, passw)).json()
+fivePayload = []
+for i in range(len(fiveRequest['results'])):
+    request_id = fiveRequest['results'][i]['id']
+    prop_address = fiveRequest['results'][i]['user_fields']['property_address']
+    prop_code = fiveRequest['results'][i]['user_fields']['property_code']
+    ticket_update = {
+        'type': 'task',
+        'subject': "5 day Arrears Call for property: " + str(prop_address),
+        'status': 'new',
+        'requester_id': request_id,
+        'custom_fields': [
+            {'id': 360021904892, 'value': 'tx_only'},
+            {'id': 360021971591, 'value': prop_code},
+            {'id': 360021971611, 'value': 'arrears_call_--_5_days'},
+            {'id': 360022146692, 'value': 'tenant'},
+            {'id': 360022146732, 'value': 'outbound'}
+        ],
+        'comment': {
+            'type': 'Comment',
+            'html_body': 'Please call {{ticket.requester.name}}. Our Records show they are 5 days in arrears.',
+            'public': False,
+        }
+    }
+    fivePayload.append(ticket_update)
+fiveArrearsData = {'tickets': fivePayload}
+#creating the over-10 days in arrears list to be sent to each of the pms.
+over_10 = true_arrears[true_arrears['Proper Arrears'] >= 10]
+PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
+#PMs that will be included in the email
+PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Jess hayes', 'Alisha Hinde', 'Danielle Clark', 'Olivia Scott']
+#Creating the email that will be sent to the PMs
+for i in range(len(PMs)):
+    pm = PMs[i]
+    PMemailNotification = PMemailNotification + '<h4>' + pm + '</h4>'
+    pm_prop = over_10[over_10['Agent'] == pm].reset_index()
+    if len(pm_prop['Property']) == 0:
+        PMemailNotification = PMemailNotification + '<p>none :)</p>'
+    for j in range(len(pm_prop['Property'])):
+        over10_prop =pm_prop['Property'][j]
+        if j == 0:
+            PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
+        else:
+            over10_propbefore = pm_prop['Property'][j-1]
+            if over10_propbefore == over10_prop:
+                continue
+            else:
+                PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
+        
+    PMemailNotification = PMemailNotification + '<p></p>'
+ten_tickets = []
+pm_ids = [383510578571,384465913331,384717503591,386897750352,385533670052,388908486311,387670113511,386911509672,386297556552,384744785051,384711255811,384655325172,384617943391,384541089651,384465913171, 385129973411]
+for i in range(len(pm_ids)):
+    pm_id = pm_ids[i]
+    ticket_update = {
             'type': 'incident',
-            'subject': "**7 Days Arrears Notification** for property: " + str(prop_address),
+            'subject': 'Over 10-days Arrears Notification',
             'status': 'solved',
-            'requester_id': request_id,
+            # Codes for PMs Order is 1.Jenna Hilton, 2.Cath, 3.Erin, 4.Andrew, 5.Meri, 6.Lucy Black, 7.Steph Wallace, 8.Lisa Yang, 9.Olivia Fraser Jones, 10.Cass Williams, 11.Tania Gunther, 12.Jess Hayes, 13.Tess Hudaverdi, 14.Audrey Chong, 15.Megan Taylor 16. Danielle Clark
+            'requester_id': pm_id,
             'custom_fields': [
                 {'id': 360021904892, 'value': 'tx_only'},
-                {'id': 360021971591, 'value': prop_code},
-                {'id': 360021971611, 'value': 'arrears_-_7_days'},
-                {'id': 360022146692, 'value': 'tenant'},
+                {'id': 360021971611, 'value': 'team_arrears_notification'},
+                {'id': 360022146692, 'value': 'property_manager'},
                 {'id': 360022146732, 'value': 'outbound'}
             ],
             'comment': {
                 'type': 'Comment',
-                'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This email is to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>If payment is not sent before 15 days has elapsed, a 14-day Notice To Vacate will be issued.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Kind regards,</p>',
+                'html_body': PMemailNotification,
                 'public': True,
             }
         }
-        sevenPayload.append(ticket_update)
-    SevenArrearsData = {'tickets': sevenPayload}
-    # Tickets that will be created for SS to call the tenant at 5 days in arrears
-    query = "type:user days_in_arrears:5 Updated>" + now
-    fiveUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
-    fiveRequest = requests.get(fiveUrl, auth = (usr, passw)).json()
-    fivePayload = []
-    for i in range(len(fiveRequest['results'])):
-        request_id = fiveRequest['results'][i]['id']
-        prop_address = fiveRequest['results'][i]['user_fields']['property_address']
-        prop_code = fiveRequest['results'][i]['user_fields']['property_code']
-        ticket_update = {
-            'type': 'task',
-            'subject': "5 day Arrears Call for property: " + str(prop_address),
-            'status': 'new',
-            'requester_id': request_id,
-            'custom_fields': [
-                {'id': 360021904892, 'value': 'tx_only'},
-                {'id': 360021971591, 'value': prop_code},
-                {'id': 360021971611, 'value': 'arrears_call_--_5_days'},
-                {'id': 360022146692, 'value': 'tenant'},
-                {'id': 360022146732, 'value': 'outbound'}
-            ],
-            'comment': {
-                'type': 'Comment',
-                'html_body': 'Please call {{ticket.requester.name}}. Our Records show they are 5 days in arrears.',
-                'public': False,
-            }
-        }
-        fivePayload.append(ticket_update)
-    fiveArrearsData = {'tickets': fivePayload}
-    #creating the over-10 days in arrears list to be sent to each of the pms.
-    over_10 = true_arrears[true_arrears['Proper Arrears'] >= 10]
-    PMemailNotification = '<p>Hi Everyone,</p><p>The following tenants are either 10 days or greater in arrears.</p>'
-    #PMs that will be included in the email
-    PMs = ['Jenna Hilton', 'Erin Crick', 'Andrew Kilsby', 'Meredith Jays', 'Lucy Black', 'Stephanie Wallace', 'Audrey Chong', 'Cassandra Williams', 'Tania Gunther', 'Lisa Yang', 'Jess hayes', 'Alisha Hinde', 'Danielle Clark', 'Olivia Scott']
-    #Creating the email that will be sent to the PMs
-    for i in range(len(PMs)):
-        pm = PMs[i]
-        PMemailNotification = PMemailNotification + '<h4>' + pm + '</h4>'
-        pm_prop = over_10[over_10['Agent'] == pm].reset_index()
-        if len(pm_prop['Property']) == 0:
-            PMemailNotification = PMemailNotification + '<p>none :)</p>'
-        for j in range(len(pm_prop['Property'])):
-            over10_prop =pm_prop['Property'][j]
-            if j == 0:
-                PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
-            else:
-                over10_propbefore = pm_prop['Property'][j-1]
-                if over10_propbefore == over10_prop:
-                    continue
-                else:
-                    PMemailNotification = PMemailNotification + '<p>' + over10_prop + '</p>'
-            
-        PMemailNotification = PMemailNotification + '<p></p>'
-    ten_tickets = []
-    pm_ids = [383510578571,384465913331,384717503591,386897750352,385533670052,388908486311,387670113511,386911509672,386297556552,384744785051,384711255811,384655325172,384617943391,384541089651,384465913171, 385129973411]
-    for i in range(len(pm_ids)):
-        pm_id = pm_ids[i]
-        ticket_update = {
-                'type': 'incident',
-                'subject': 'Over 10-days Arrears Notification',
-                'status': 'solved',
-                # Codes for PMs Order is 1.Jenna Hilton, 2.Cath, 3.Erin, 4.Andrew, 5.Meri, 6.Lucy Black, 7.Steph Wallace, 8.Lisa Yang, 9.Olivia Fraser Jones, 10.Cass Williams, 11.Tania Gunther, 12.Jess Hayes, 13.Tess Hudaverdi, 14.Audrey Chong, 15.Megan Taylor 16. Danielle Clark
-                'requester_id': pm_id,
-                'custom_fields': [
-                    {'id': 360021904892, 'value': 'tx_only'},
-                    {'id': 360021971611, 'value': 'team_arrears_notification'},
-                    {'id': 360022146692, 'value': 'property_manager'},
-                    {'id': 360022146732, 'value': 'outbound'}
-                ],
-                'comment': {
-                    'type': 'Comment',
-                    'html_body': PMemailNotification,
-                    'public': True,
-                }
-            }
-        ten_tickets.append(ticket_update)
-    tenTicketData = {'tickets': ten_tickets}
+    ten_tickets.append(ticket_update)
+tenTicketData = {'tickets': ten_tickets}
 
 
 single_email_url = 'https://longview.zendesk.com/api/v2/tickets.json'
