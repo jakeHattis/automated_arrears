@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 print("Hi there! I'm going to run through the program now.")
 date = datetime.now() - timedelta(days=7)
 ytime = date.strftime("%Y-%m-%d")
-now = datetime.now().strftime("%Y-%m-%d")
+now = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 query = "type:user days_in_arrears>0 updated>" + ytime
 url = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
@@ -200,7 +200,7 @@ for i in range(len(pa)):
         input("Exit Program")
     else:
         continue
-query = "type:user days_in_arrears>2 days_in_arrears<5 Updated>" + now
+query = "type:user days_in_arrears>2 days_in_arrears<5 updated>" + now
 threeFourUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
@@ -210,9 +210,12 @@ for i in range(len(threeFour['results'])):
     request_id = threeFour['results'][i]['id']
     prop_address = threeFour['results'][i]['user_fields']['property_address']
     prop_code = threeFour['results'][i]['user_fields']['property_code']
+    n = threeFour['results'][i]['name']
+    d = threeFour['results'][i]['user_fields']['days_in_arrears']
+    a = threeFour['results'][i]['user_fields']['amount_outstanding']
     ticket_update = {
         'type': 'incident',
-        'subject': "**Arrears Notification** for property: " + str(prop_address),
+        'subject': f"**Arrears Notification** for property: {prop_address}",
         'status': 'solved',
         'requester_id': request_id,
         'custom_fields': [
@@ -224,15 +227,17 @@ for i in range(len(threeFour['results'])):
         ],
         'comment': {
             'type': 'Comment',
-            'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
+            'html_body': f'<p>Hello {n}​,</p><p>This is a friendly reminder to advise that your monthly rental payment is now {d} days overdue. Our system shows you are owing ${a}.</p><p>We will continue to send SMS and email updates while you remain in arrears.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Do not hesitate to respond to this email or call us to discuss this matter further.</p><p>Warm regards,</p>',
             'public': True,
+            #Setting author as Finance | LongView Real Estate
+            'author_id': 387311580292
         }
     }
     threeFourArrearsPayload.append(ticket_update)
 threeFourArrearsData = {'tickets': threeFourArrearsPayload}
 
 #Automated tickets created for tenants taht are seven days in arrears. 
-query = "type:user days_in_arrears:7 Updated>" + now
+query = "type:user days_in_arrears:7 updated>" + now
 SevenUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
@@ -242,9 +247,12 @@ for i in range(len(sevenRequest['results'])):
     request_id = sevenRequest['results'][i]['id']
     prop_address = sevenRequest['results'][i]['user_fields']['property_address']
     prop_code = sevenRequest['results'][i]['user_fields']['property_code']
+    n = sevenRequest['results'][i]['name']
+    d = sevenRequest['results'][i]['user_fields']['days_in_arrears']
+    a = sevenRequest['results'][i]['user_fields']['amount_outstanding']
     ticket_update = {
         'type': 'incident',
-        'subject': "**7 Days Arrears Notification** for property: " + str(prop_address),
+        'subject': f"**7 Days Arrears Notification** for property: {prop_address}",
         'status': 'solved',
         'requester_id': request_id,
         'custom_fields': [
@@ -256,14 +264,15 @@ for i in range(len(sevenRequest['results'])):
         ],
         'comment': {
             'type': 'Comment',
-            'html_body': '<p>Hello {{ticket.requester.name}}​,</p><p>This email is to advise that your monthly rental payment is now {{ticket.requester.custom_fields.days_in_arrears}} days overdue. Our system shows you are owing ${{ticket.requester.custom_fields.amount_outstanding}}.</p><p>If payment is not sent before 15 days has elapsed, a 14-day Notice To Vacate will be issued.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Kind regards,</p>',
+            'html_body': f'<p>Hello {n}​,</p><p>This email is to advise that your monthly rental payment is now {d} days overdue. Our system shows you are owing ${a}.</p><p>If payment is not sent before 15 days has elapsed, a 14-day Notice To Vacate will be issued.</p><p>If you have recently processed the payment, please forward through a copy of the payment remittance and disregard this notice.</p><p>Kind regards,</p>',
             'public': True,
+            'author_id': 387311580292
         }
     }
     sevenPayload.append(ticket_update)
 SevenArrearsData = {'tickets': sevenPayload}
 # Tickets that will be created for SS to call the tenant at 5 days in arrears
-query = "type:user days_in_arrears:5 Updated>" + now
+query = "type:user days_in_arrears:5 updated>" + now
 fiveUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
 usr = 'jake.hattis@longview.com.au'
 passw = 'PotatoBondi3160!'
@@ -273,9 +282,10 @@ for i in range(len(fiveRequest['results'])):
     request_id = fiveRequest['results'][i]['id']
     prop_address = fiveRequest['results'][i]['user_fields']['property_address']
     prop_code = fiveRequest['results'][i]['user_fields']['property_code']
+    n = fiveRequest['results'][i]['name']
     ticket_update = {
         'type': 'task',
-        'subject': "5 day Arrears Call for property: " + str(prop_address),
+        'subject': f"5 day Arrears Call for property: {prop_address}",
         'status': 'new',
         'requester_id': request_id,
         'custom_fields': [
@@ -287,7 +297,7 @@ for i in range(len(fiveRequest['results'])):
         ],
         'comment': {
             'type': 'Comment',
-            'html_body': 'Please call {{ticket.requester.name}}. Our Records show they are 5 days in arrears.',
+            'html_body': f'Please call {n}. Our Records show they are 5 days in arrears.',
             'public': False,
         }
     }
@@ -341,12 +351,13 @@ for i in range(len(pm_ids)):
         }
     ten_tickets.append(ticket_update)
 tenTicketData = {'tickets': ten_tickets}
-
-
-single_email_url = 'https://longview.zendesk.com/api/v2/tickets.json'
-bulk_email_url = 'https://longview.zendesk.com/api/v2/tickets/create_many.json'
-three_four_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=threeFourArrearsData)
-seven_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=SevenArrearsData)
-five_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=fiveArrearsData)
-ten_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=tenTicketData)
-input("Program Successful, Press Enter")
+if (len(threeFourArrearsData['tickets']) == 0) or (len(SevenArrearsData['tickets']) == 0):
+    input("Emails are not being sent out. Please exit out of program.")
+else:
+    single_email_url = 'https://longview.zendesk.com/api/v2/tickets.json'
+    bulk_email_url = 'https://longview.zendesk.com/api/v2/tickets/create_many.json'
+    three_four_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=threeFourArrearsData)
+    seven_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=SevenArrearsData)
+    five_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=fiveArrearsData)
+    ten_request = requests.post(url=bulk_email_url, auth=(usr,passw), headers=headers, json=tenTicketData)
+    input("Program Successful, Press Enter")
