@@ -11,8 +11,8 @@ try:
     now = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     query = "type:user days_in_arrears>0 updated>" + ytime
     url = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
+    usr = ''
+    passw = ''
     response = requests.get(url, auth = (usr, passw)).json()
     users = response["results"]
 
@@ -98,8 +98,8 @@ try:
                 }
         }
         payload.append(addition)
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
+    usr = ''
+    passw = ''
     post_endpoint = 'https://longview.zendesk.com/api/v2/users/create_or_update_many.json'
     auth = {usr, passw}
     headers = {"Content-Type": 'application/json'}
@@ -204,8 +204,8 @@ try:
             continue
     query = "type:user days_in_arrears>2 days_in_arrears<5 updated>" + now
     threeFourUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
+    usr = ''
+    passw = ''
     threeFour = requests.get(threeFourUrl, auth = (usr, passw)).json()
     threeFourArrearsPayload = []
     for i in range(len(threeFour['results'])):
@@ -241,8 +241,8 @@ try:
     #Automated tickets created for tenants taht are seven days in arrears. 
     query = "type:user days_in_arrears:7 updated>" + now
     SevenUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
+    usr = ''
+    passw = ''
     sevenRequest = requests.get(SevenUrl, auth = (usr, passw)).json()
     sevenPayload = []
     for i in range(len(sevenRequest['results'])):
@@ -276,8 +276,8 @@ try:
     # Tickets that will be created for SS to call the tenant at 5 days in arrears
     query = "type:user days_in_arrears:5 updated>" + now
     fiveUrl = 'https://longview.zendesk.com/api/v2/search.json?query=' + query
-    usr = 'jake.hattis@longview.com.au'
-    passw = 'PotatoBondi3160!'
+    usr = ''
+    passw = ''
     fiveRequest = requests.get(fiveUrl, auth = (usr, passw)).json()
     fivePayload = []
     for i in range(len(fiveRequest['results'])):
